@@ -2,6 +2,7 @@ import type { Tournament } from '../types'
 import { getTournamentChampion } from '../tournament'
 import KnockoutBracket from './KnockoutBracket'
 import MatchCard from './MatchCard'
+import ChampionBanner from './ChampionBanner'
 
 type Props = {
   tournament: Tournament
@@ -10,7 +11,7 @@ type Props = {
 
 export default function KnockoutScreen({ tournament, onMatchResult }: Props) {
   const { knockoutRounds, phase } = tournament
-  const champion = getTournamentChampion(knockoutRounds)
+  const champion = phase === 'finished' ? getTournamentChampion(knockoutRounds) : null
 
   const activeRoundIdx = knockoutRounds.findIndex(
     r => r.matches.some(m => m.result === null && m.teamA && m.teamB)
@@ -21,7 +22,6 @@ export default function KnockoutScreen({ tournament, onMatchResult }: Props) {
       <KnockoutBracket
         rounds={knockoutRounds}
         onResult={onMatchResult}
-        champion={phase === 'finished' ? champion : null}
       />
 
       {activeRoundIdx >= 0 && (
@@ -41,6 +41,8 @@ export default function KnockoutScreen({ tournament, onMatchResult }: Props) {
           </div>
         </div>
       )}
+
+      {champion && <ChampionBanner champion={champion} />}
     </div>
   )
 }

@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import type { KnockoutRound, Match, Team } from '../types'
+import type { KnockoutRound, Match } from '../types'
 import { getKnockoutWinner } from '../tournament'
 
 type Props = {
   rounds: KnockoutRound[]
   onResult: (matchId: string, scoreA: number, scoreB: number) => void
-  champion: Team | null
 }
 
 function BracketMatch({
@@ -135,20 +134,11 @@ function BracketMatch({
   )
 }
 
-export default function KnockoutBracket({ rounds, onResult, champion }: Props) {
+export default function KnockoutBracket({ rounds, onResult }: Props) {
   if (rounds.length === 0) return null
 
   return (
     <div className="space-y-6">
-      {champion && (
-        <div className="border border-amber-500/50 bg-amber-500/10 rounded-xl p-6 text-center space-y-2">
-          <p className="text-xs tracking-widest text-amber-400/70 uppercase font-medium">Turniersieger</p>
-          <p className="text-2xl font-bold text-amber-300">{champion.name}</p>
-          {champion.players.length > 1 && (
-            <p className="text-sm text-amber-400/60">{champion.players.map(p => p.name).join(' & ')}</p>
-          )}
-        </div>
-      )}
 
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-6 items-start" style={{ minWidth: 'max-content' }}>

@@ -198,13 +198,16 @@ export function updateKnockoutRounds(rounds: KnockoutRound[]): KnockoutRound[] {
       const nextMatchIdx = Math.floor(i / 2)
       const nextMatch = next.matches[nextMatchIdx]
       if (!nextMatch) return
+      const oldTeam = i % 2 === 0 ? nextMatch.teamA : nextMatch.teamB
       if (i % 2 === 0) {
         nextMatch.teamA = winner
       } else {
         nextMatch.teamB = winner
       }
-      // Clear result if teams changed
-      if (winner) nextMatch.result = null
+      // Only reset result if the team in this slot actually changed
+      if (winner?.id !== oldTeam?.id) {
+        nextMatch.result = null
+      }
     })
   }
 
