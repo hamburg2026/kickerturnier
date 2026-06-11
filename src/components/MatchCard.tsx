@@ -4,10 +4,9 @@ import type { Match } from '../types'
 type Props = {
   match: Match
   onResult: (matchId: string, scoreA: number, scoreB: number) => void
-  compact?: boolean
 }
 
-export default function MatchCard({ match, onResult, compact = false }: Props) {
+export default function MatchCard({ match, onResult }: Props) {
   const [editing, setEditing] = useState(false)
   const [sA, setSA] = useState(match.result?.scoreA?.toString() ?? '')
   const [sB, setSB] = useState(match.result?.scoreB?.toString() ?? '')
@@ -27,68 +26,62 @@ export default function MatchCard({ match, onResult, compact = false }: Props) {
   }
 
   const played = match.result !== null
-  const isBye = (!match.teamA || !match.teamB)
+  const isBye = !match.teamA || !match.teamB
 
   if (isBye) {
     const team = match.teamA ?? match.teamB
     return (
-      <div className={`bg-slate-700/50 rounded-xl p-3 flex items-center gap-2 ${compact ? 'text-sm' : ''}`}>
-        <span className="text-slate-400 text-xs">Freilos:</span>
-        <span className="text-green-400 font-medium">{team?.name ?? '—'}</span>
+      <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-zinc-500">
+        <span>Freilos</span>
+        <span className="text-zinc-300">{team?.name ?? '—'}</span>
       </div>
     )
   }
 
+  const winnerA = played && match.result!.scoreA > match.result!.scoreB
+  const winnerB = played && match.result!.scoreB > match.result!.scoreA
+
   return (
     <div
-      className={`bg-slate-700 rounded-xl ${compact ? 'p-2' : 'p-4'} cursor-pointer hover:bg-slate-600 transition-colors`}
+      className="group flex items-center gap-2 px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded cursor-pointer hover:border-zinc-600 transition-colors"
       onClick={() => !editing && startEdit()}
     >
       {editing ? (
-        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-          <span className="flex-1 text-sm font-medium truncate">{match.teamA?.name}</span>
+        <div className="flex items-center gap-2 w-full" onClick={e => e.stopPropagation()}>
+          <span className="flex-1 text-sm truncate text-zinc-300">{match.teamA?.name}</span>
           <input
-            autoFocus
-            type="number"
-            min={0}
-            value={sA}
+            autoFocus type="number" min={0} value={sA}
             onChange={e => setSA(e.target.value)}
-            className="w-12 text-center bg-slate-900 border border-slate-500 rounded-lg p-1 text-white focus:outline-none focus:border-blue-500"
+            className="w-11 text-center bg-zinc-950 border border-zinc-600 rounded p-1 text-sm text-white focus:outline-none focus:border-zinc-400 font-mono"
           />
-          <span className="text-slate-400">:</span>
+          <span className="text-zinc-600 text-xs">:</span>
           <input
-            type="number"
-            min={0}
-            value={sB}
+            type="number" min={0} value={sB}
             onChange={e => setSB(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && save()}
-            className="w-12 text-center bg-slate-900 border border-slate-500 rounded-lg p-1 text-white focus:outline-none focus:border-blue-500"
+            className="w-11 text-center bg-zinc-950 border border-zinc-600 rounded p-1 text-sm text-white focus:outline-none focus:border-zinc-400 font-mono"
           />
-          <span className="flex-1 text-sm font-medium truncate text-right">{match.teamB?.name}</span>
-          <button onClick={save} className="ml-2 px-3 py-1 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-medium">✓</button>
-          <button onClick={() => setEditing(false)} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded-lg text-xs">✕</button>
+          <span className="flex-1 text-sm truncate text-right text-zinc-300">{match.teamB?.name}</span>
+          <button onClick={save} className="ml-1 px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded text-xs text-zinc-200">✓</button>
+          <button onClick={() => setEditing(false)} className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-xs text-zinc-400">✕</button>
         </div>
       ) : (
-        <div className="flex items-center gap-2">
-          <span className={`flex-1 text-sm font-medium truncate ${played && match.result!.scoreA > match.result!.scoreB ? 'text-yellow-300' : ''}`}>
+        <div className="flex items-center gap-2 w-full">
+          <span className={`flex-1 text-sm truncate ${winnerA ? 'text-zinc-100 font-medium' : 'text-zinc-400'}`}>
             {match.teamA?.name}
           </span>
-          {played ? (
-            <div className="flex items-center gap-1 px-3 py-1 bg-slate-800 rounded-lg min-w-[64px] justify-center">
-              <span className={`font-bold ${match.result!.scoreA > match.result!.scoreB ? 'text-yellow-300' : 'text-slate-300'}`}>
-                {match.result!.scoreA}
-              </span>
-              <span className="text-slate-500 text-xs">:</span>
-              <span className={`font-bold ${match.result!.scoreB > match.result!.scoreA ? 'text-yellow-300' : 'text-slate-300'}`}>
-                {match.result!.scoreB}
-              </span>
-            </div>
-          ) : (
-            <div className="px-3 py-1 bg-slate-800 rounded-lg min-w-[64px] text-center text-slate-500 text-xs">
-              — : —
-            </div>
-          )}
-          <span className={`flex-1 text-sm font-medium truncate text-right ${played && match.result!.scoreB > match.result!.scoreA ? 'text-yellow-300' : ''}`}>
+          <div className="flex items-center gap-1 font-mono text-sm min-w-[52px] justify-center">
+            {played ? (
+              <>
+                <span className={winnerA ? 'text-zinc-100 font-semibold' : 'text-zinc-500'}>{match.result!.scoreA}</span>
+                <span className="text-zinc-700">:</span>
+                <span className={winnerB ? 'text-zinc-100 font-semibold' : 'text-zinc-500'}>{match.result!.scoreB}</span>
+              </>
+            ) : (
+              <span className="text-zinc-700 text-xs group-hover:text-zinc-500 transition-colors">· · ·</span>
+            )}
+          </div>
+          <span className={`flex-1 text-sm truncate text-right ${winnerB ? 'text-zinc-100 font-medium' : 'text-zinc-400'}`}>
             {match.teamB?.name}
           </span>
         </div>
