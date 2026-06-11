@@ -182,7 +182,9 @@ export function buildKnockoutRounds(qualifiers: (Team | null)[]): KnockoutRound[
     roundIndex++
   }
 
-  return rounds
+  // Propagate bye winners into later rounds immediately so the bracket
+  // renders correctly on first load (not just after the first result entry).
+  return updateKnockoutRounds(rounds)
 }
 
 export function getKnockoutWinner(match: Match): Team | null {

@@ -150,12 +150,16 @@ export default function KnockoutBracket({ rounds, onResult }: Props) {
               ? round.matches.filter(m => m.teamA && m.teamB)
               : round.matches
             if (displayMatches.length === 0) return null
+            // If any round-0 slots were hidden (byes), the round is a preliminary
+            const roundLabel = (ri === 0 && displayMatches.length < round.matches.length)
+              ? 'Vorrunde'
+              : round.name
             return (
               <div key={round.roundIndex} className="flex flex-col">
                 <p className={`text-center text-xs font-semibold tracking-widest uppercase mb-3 ${
                   isFinalRound ? 'text-amber-400' : 'text-sky-400'
                 }`}>
-                  {round.name}
+                  {roundLabel}
                 </p>
                 <div className="flex flex-col" style={{ gap: `${spacing}px` }}>
                   {displayMatches.map(match => (

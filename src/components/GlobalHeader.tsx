@@ -25,7 +25,7 @@ export default function GlobalHeader({ tournament, onSave, onReset, onLoadFile, 
     }
     if (phase === 'knockout' || phase === 'finished') {
       const total = tournament.knockoutRounds.reduce((s, r) => s + r.matches.filter(m => m.teamA && m.teamB).length, 0)
-      const played = tournament.knockoutRounds.reduce((s, r) => s + r.matches.filter(m => m.result).length, 0)
+      const played = tournament.knockoutRounds.reduce((s, r) => s + r.matches.filter(m => m.result && m.teamA && m.teamB).length, 0)
       return `${played} / ${total}`
     }
     return null
