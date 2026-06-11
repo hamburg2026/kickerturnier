@@ -77,6 +77,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
+      {/* Ponturo logo as fixed background watermark */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          backgroundImage: 'url(/kickerturnier/logo.png)',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center center',
+          backgroundSize: '480px auto',
+          opacity: 0.04,
+        }}
+      />
       <GlobalHeader
         tournament={tournament}
         onSave={handleSave}
@@ -84,7 +95,7 @@ export default function App() {
         onLoadFile={handleLoadFile}
         loadRef={loadRef}
       />
-      <main className="flex-1 flex flex-col">
+      <main className="relative z-10 flex-1 flex flex-col">
         {!tournament && (
           <SetupScreen onStart={handleStart} loadError={loadError} />
         )}

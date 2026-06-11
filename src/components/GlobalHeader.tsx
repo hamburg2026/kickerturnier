@@ -34,8 +34,9 @@ export default function GlobalHeader({ tournament, onSave, onReset, onLoadFile, 
   return (
     <header className="sticky top-0 z-50 bg-gray-900 border-b border-gray-700 h-14 flex items-center px-4 gap-4 shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-2 mr-2">
-        <span className="text-sky-400 font-bold text-lg select-none">⚡</span>
+      <div className="flex items-center gap-3 mr-2">
+        <img src="/kickerturnier/logo.png" alt="ponturo" className="h-7 w-auto opacity-90" />
+        <span className="text-gray-500 text-xs">|</span>
         <span className="font-semibold text-white text-sm tracking-wide">Kickerturnier</span>
       </div>
 

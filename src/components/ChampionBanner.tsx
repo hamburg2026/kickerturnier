@@ -15,8 +15,14 @@ export default function ChampionBanner({ champion }: { champion: Team }) {
       <p className="relative text-xs tracking-[0.35em] text-amber-400/60 uppercase font-semibold mb-3">
         Champions
       </p>
+
+      {/* ponturo logo */}
+      <div className="relative flex justify-center mb-3">
+        <img src="/kickerturnier/logo.png" alt="ponturo" className="h-8 w-auto opacity-50" />
+      </div>
+
       <p className="relative text-sm text-amber-300/50 mb-6 tracking-wide">
-        ponturo Kicker-Turnier 2026
+        Kicker-Turnier 2026
       </p>
 
       {/* Divider */}
