@@ -119,12 +119,28 @@ export function computeGroupStandings(group: Group): GroupStanding[] {
   })
 }
 
+// Standard seeded bracket layout: seed 1 can only meet seed 2 in the final.
+// Byes go to the highest seeds (best teams advance automatically).
+function seededBracketOrder(size: number): number[] {
+  let order = [1, 2]
+  while (order.length < size) {
+    const m = order.length * 2 + 1
+    order = order.flatMap(s => [s, m - s])
+  }
+  return order
+}
+
 export function buildKnockoutRounds(qualifiers: (Team | null)[]): KnockoutRound[] {
+  const teams = qualifiers.filter((t): t is Team => t !== null)
   // Pad to next power of 2
   let size = 1
-  while (size < qualifiers.length) size *= 2
-  const padded: (Team | null)[] = [...qualifiers]
-  while (padded.length < size) padded.push(null)
+  while (size < teams.length) size *= 2
+
+  // Place teams at seeded positions so top seeds get byes and can only meet late
+  const bracketOrder = seededBracketOrder(size)
+  const padded: (Team | null)[] = bracketOrder.map(seedNum =>
+    seedNum <= teams.length ? teams[seedNum - 1] : null
+  )
 
   const rounds: KnockoutRound[] = []
   let currentTeams = padded

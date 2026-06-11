@@ -29,8 +29,25 @@ function BracketMatch({
   }
 
   const winner = getKnockoutWinner(match)
+  const isBye = !match.teamA || !match.teamB
   const canPlay = !!(match.teamA && match.teamB)
   const played = match.result !== null
+
+  // Bye match: show compact single-row card, team auto-advances
+  if (isBye) {
+    const team = match.teamA || match.teamB
+    return (
+      <div
+        className="rounded-lg border border-emerald-800/40 bg-emerald-950/30 overflow-hidden select-none"
+        style={{ minWidth: 200 }}
+      >
+        <div className="px-3 py-2.5 flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-emerald-300 truncate">{team?.name ?? 'TBD'}</span>
+          <span className="text-xs text-emerald-600 bg-emerald-900/40 px-2 py-0.5 rounded shrink-0">Freilos</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
