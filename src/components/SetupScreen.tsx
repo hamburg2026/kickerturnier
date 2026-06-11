@@ -4,12 +4,10 @@ import type { TournamentConfig, Player } from '../types'
 
 type Props = {
   onStart: (players: Player[], config: TournamentConfig) => void
-  onLoadFile: (e: React.ChangeEvent<HTMLInputElement>) => void
-  loadRef: React.RefObject<HTMLInputElement | null>
   loadError: string
 }
 
-export default function SetupScreen({ onStart, onLoadFile, loadRef, loadError }: Props) {
+export default function SetupScreen({ onStart, loadError }: Props) {
   const [playerText, setPlayerText] = useState('')
   const [mode, setMode] = useState<'team' | 'individual'>('team')
   const [format, setFormat] = useState<'groups+ko' | 'ko-only'>('groups+ko')
@@ -52,145 +50,117 @@ export default function SetupScreen({ onStart, onLoadFile, loadRef, loadError }:
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-xl space-y-px">
+    <div className="flex-1 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg space-y-3">
 
-        {/* Header */}
-        <div className="flex items-end justify-between pb-6">
-          <div>
-            <p className="text-xs tracking-[0.25em] text-zinc-500 uppercase mb-1">Tischfußball</p>
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-100">Kickerturnier</h1>
-          </div>
-          <div className="flex gap-2">
-            <button
-              className="px-3 py-1.5 text-xs text-zinc-400 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-200 rounded transition-colors"
-              onClick={() => loadRef.current?.click()}
-            >
-              Turnier laden
-            </button>
-            <input ref={loadRef} type="file" accept=".json" className="hidden" onChange={onLoadFile} />
-          </div>
-        </div>
-
-        {loadError && (
-          <div className="bg-red-950/50 border border-red-800 rounded p-3 text-red-400 text-xs mb-4">
-            {loadError}
+        {(loadError || error) && (
+          <div className="bg-red-900/40 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
+            {loadError || error}
           </div>
         )}
 
         {/* Spieler */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-3">
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium tracking-widest text-zinc-500 uppercase">Spieler</label>
+            <h2 className="text-xs font-semibold tracking-widest text-gray-400 uppercase">Spieler</h2>
             {players.length > 0 && (
-              <span className="text-xs text-zinc-400">{players.length} erkannt</span>
+              <span className="text-xs text-emerald-400 font-medium">{players.length} erkannt</span>
             )}
           </div>
           <textarea
-            className="w-full h-32 bg-zinc-950 border border-zinc-800 rounded p-3 text-sm text-zinc-200 placeholder-zinc-700 resize-none focus:outline-none focus:border-zinc-600 font-mono"
+            className="w-full h-32 bg-gray-900 border border-gray-600 rounded-lg p-3 text-sm text-gray-100 placeholder-gray-600 resize-none focus:outline-none focus:border-sky-500 font-mono leading-relaxed"
             placeholder={"Max Mustermann\nAnna Schmidt\nTom Meyer\nLisa Müller"}
             value={playerText}
             onChange={e => setPlayerText(e.target.value)}
           />
           <button
-            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="text-xs text-gray-500 hover:text-sky-400 transition-colors flex items-center gap-1"
             onClick={() => fileRef.current?.click()}
           >
-            + CSV / TXT hochladen
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            CSV / TXT Datei laden
           </button>
           <input ref={fileRef} type="file" accept=".txt,.csv" className="hidden" onChange={handleFile} />
-        </section>
+        </div>
 
         {/* Modus */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-3">
-          <label className="text-xs font-medium tracking-widest text-zinc-500 uppercase block">Modus</label>
-          <div className="space-y-2">
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 space-y-2">
+          <h2 className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Modus</h2>
+          <div className="grid grid-cols-2 gap-2">
             {(['team', 'individual'] as const).map(m => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
-                className={`w-full flex items-center gap-3 p-3 rounded border text-left transition-all ${
+                className={`p-3 rounded-lg border text-left transition-all ${
                   mode === m
-                    ? 'border-zinc-500 bg-zinc-800 text-zinc-100'
-                    : 'border-zinc-800 hover:border-zinc-700 text-zinc-400'
+                    ? 'border-sky-500 bg-sky-500/10 text-white'
+                    : 'border-gray-700 hover:border-gray-500 text-gray-400'
                 }`}
               >
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${mode === m ? 'bg-zinc-300' : 'bg-zinc-700'}`} />
-                <div>
-                  <div className="text-sm font-medium">{m === 'team' ? 'Team-Modus' : 'Einzel-Modus'}</div>
-                  <div className="text-xs text-zinc-600 mt-0.5">
-                    {m === 'team' ? '2er-Teams, zufällig ausgelost' : '1 gegen 1'}
-                  </div>
+                <div className="font-medium text-sm">{m === 'team' ? 'Team-Modus' : 'Einzel-Modus'}</div>
+                <div className="text-xs mt-0.5 opacity-70">
+                  {m === 'team' ? '2er-Teams, zufällig gelost' : '1 gegen 1'}
                 </div>
               </button>
             ))}
           </div>
-        </section>
+        </div>
 
         {/* Format */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-3">
-          <label className="text-xs font-medium tracking-widest text-zinc-500 uppercase block">Format</label>
-          <div className="space-y-2">
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 space-y-2">
+          <h2 className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Format</h2>
+          <div className="grid grid-cols-2 gap-2">
             {(['groups+ko', 'ko-only'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setFormat(f)}
-                className={`w-full flex items-center gap-3 p-3 rounded border text-left transition-all ${
+                className={`p-3 rounded-lg border text-left transition-all ${
                   format === f
-                    ? 'border-zinc-500 bg-zinc-800 text-zinc-100'
-                    : 'border-zinc-800 hover:border-zinc-700 text-zinc-400'
+                    ? 'border-sky-500 bg-sky-500/10 text-white'
+                    : 'border-gray-700 hover:border-gray-500 text-gray-400'
                 }`}
               >
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${format === f ? 'bg-zinc-300' : 'bg-zinc-700'}`} />
-                <div>
-                  <div className="text-sm font-medium">
-                    {f === 'groups+ko' ? 'Gruppenphase + KO-Runden' : 'Nur KO-Runden'}
-                  </div>
-                  <div className="text-xs text-zinc-600 mt-0.5">
-                    {f === 'groups+ko' ? 'Vorrundengruppen, danach Turnierbaum' : 'Direktes KO-System'}
-                  </div>
+                <div className="font-medium text-sm">
+                  {f === 'groups+ko' ? 'Gruppenphase + KO' : 'Nur KO-Runden'}
+                </div>
+                <div className="text-xs mt-0.5 opacity-70">
+                  {f === 'groups+ko' ? 'Vorrunde, dann Turnierbaum' : 'Direktes KO-System'}
                 </div>
               </button>
             ))}
           </div>
 
           {format === 'groups+ko' && (
-            <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-700 mt-3">
               <label className="space-y-1.5">
-                <span className="text-xs text-zinc-500">Anzahl Gruppen</span>
+                <span className="text-xs text-gray-500">Anzahl Gruppen</span>
                 <input
                   type="number" min={2} max={8} value={numGroups}
                   onChange={e => setNumGroups(Math.max(2, parseInt(e.target.value) || 2))}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded p-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500 font-mono"
+                  className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-sky-500 font-mono"
                 />
               </label>
               <label className="space-y-1.5">
-                <span className="text-xs text-zinc-500">Aufsteiger / Gruppe</span>
+                <span className="text-xs text-gray-500">Aufsteiger / Gruppe</span>
                 <input
                   type="number" min={1} max={8} value={advanceFromGroup}
                   onChange={e => setAdvanceFromGroup(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded p-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500 font-mono"
+                  className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-sky-500 font-mono"
                 />
               </label>
             </div>
           )}
-        </section>
-
-        {error && (
-          <div className="bg-red-950/50 border border-red-800 rounded p-3 text-red-400 text-xs">
-            {error}
-          </div>
-        )}
-
-        <div className="pt-2">
-          <button
-            onClick={handleStart}
-            disabled={players.length < minPlayers}
-            className="w-full py-3 bg-zinc-100 hover:bg-white disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 rounded font-semibold text-sm tracking-wide transition-colors"
-          >
-            Turnier starten
-          </button>
         </div>
+
+        <button
+          onClick={handleStart}
+          disabled={players.length < minPlayers}
+          className="w-full py-3.5 bg-sky-600 hover:bg-sky-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl font-semibold text-sm tracking-wide transition-colors"
+        >
+          Turnier starten
+        </button>
       </div>
     </div>
   )

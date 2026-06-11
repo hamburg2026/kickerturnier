@@ -7,6 +7,7 @@ import {
   getKnockoutWinner,
 } from './tournament'
 import { saveTournament, loadTournament } from './backup'
+import GlobalHeader from './components/GlobalHeader'
 import SetupScreen from './components/SetupScreen'
 import GroupPhaseScreen from './components/GroupPhaseScreen'
 import KnockoutScreen from './components/KnockoutScreen'
@@ -74,35 +75,33 @@ export default function App() {
     setLoadError('')
   }
 
-  if (!tournament) {
-    return (
-      <SetupScreen
-        onStart={handleStart}
-        onLoadFile={handleLoadFile}
-        loadRef={loadRef}
-        loadError={loadError}
-      />
-    )
-  }
-
-  if (tournament.phase === 'groups') {
-    return (
-      <GroupPhaseScreen
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col">
+      <GlobalHeader
         tournament={tournament}
-        onMatchResult={handleGroupMatchResult}
-        onAdvance={handleAdvanceToKnockout}
         onSave={handleSave}
         onReset={handleReset}
+        onLoadFile={handleLoadFile}
+        loadRef={loadRef}
       />
-    )
-  }
-
-  return (
-    <KnockoutScreen
-      tournament={tournament}
-      onMatchResult={handleKnockoutMatchResult}
-      onSave={handleSave}
-      onReset={handleReset}
-    />
+      <main className="flex-1 flex flex-col">
+        {!tournament && (
+          <SetupScreen onStart={handleStart} loadError={loadError} />
+        )}
+        {tournament?.phase === 'groups' && (
+          <GroupPhaseScreen
+            tournament={tournament}
+            onMatchResult={handleGroupMatchResult}
+            onAdvance={handleAdvanceToKnockout}
+          />
+        )}
+        {(tournament?.phase === 'knockout' || tournament?.phase === 'finished') && (
+          <KnockoutScreen
+            tournament={tournament}
+            onMatchResult={handleKnockoutMatchResult}
+          />
+        )}
+      </main>
+    </div>
   )
 }

@@ -52,20 +52,28 @@ export function buildTeams(players: Player[], mode: 'team' | 'individual'): Team
   return teams
 }
 
+// Circle-method scheduler: each team plays exactly once per round,
+// guaranteeing equal play/rest distribution across all teams.
 function roundRobinMatches(teams: Team[], groupId: string): Match[] {
-  const matches: Match[] = []
-  for (let i = 0; i < teams.length; i++) {
-    for (let j = i + 1; j < teams.length; j++) {
-      matches.push({
-        id: uid(),
-        teamA: teams[i],
-        teamB: teams[j],
-        result: null,
-        groupId,
-      })
+  const list: (Team | null)[] = teams.length % 2 === 0 ? [...teams] : [...teams, null]
+  const N = list.length
+  const allMatches: Match[] = []
+
+  for (let roundNum = 0; roundNum < N - 1; roundNum++) {
+    for (let i = 0; i < N / 2; i++) {
+      const tA = list[i]
+      const tB = list[N - 1 - i]
+      if (tA && tB) {
+        allMatches.push({ id: uid(), teamA: tA, teamB: tB, result: null, groupId, round: roundNum })
+      }
     }
+    // Rotate: fix list[0], shift rest one position clockwise
+    const last = list[N - 1]
+    for (let i = N - 1; i > 1; i--) list[i] = list[i - 1]
+    list[1] = last
   }
-  return matches
+
+  return allMatches
 }
 
 export function buildGroups(teams: Team[], numGroups: number): Group[] {
