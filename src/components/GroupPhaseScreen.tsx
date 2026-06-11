@@ -93,31 +93,21 @@ export default function GroupPhaseScreen({ tournament, onMatchResult, onAdvance 
 
               {/* Matches by round */}
               <div className="divide-y divide-gray-700/50">
-                {rounds.map(([roundNum, roundMatches]) => {
-                  const teamsInRound = new Set(roundMatches.flatMap(m => [m.teamA?.id, m.teamB?.id].filter(Boolean)))
-                  const byeTeams = group.teams.filter(t => !teamsInRound.has(t.id))
-                  return (
-                    <div key={roundNum} className="px-3 py-3 space-y-1.5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium text-sky-400 uppercase tracking-wider">
-                          Runde {parseInt(roundNum) + 1}
-                        </span>
-                        <span className="text-xs text-gray-600">
-                          {roundMatches.filter(m => m.result).length}/{roundMatches.length} gespielt
-                        </span>
-                      </div>
-                      {roundMatches.map((m: Match) => (
-                        <MatchCard key={m.id} match={m} onResult={onMatchResult} />
-                      ))}
-                      {byeTeams.map(t => (
-                        <div key={t.id} className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700/50 bg-gray-750">
-                          <span className="text-sm text-gray-400 truncate">{t.name}</span>
-                          <span className="text-xs text-gray-600 bg-gray-700/50 px-2 py-0.5 rounded ml-2 shrink-0">Freilos</span>
-                        </div>
-                      ))}
+                {rounds.map(([roundNum, roundMatches]) => (
+                  <div key={roundNum} className="px-3 py-3 space-y-1.5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-medium text-sky-400 uppercase tracking-wider">
+                        Runde {parseInt(roundNum) + 1}
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        {roundMatches.filter(m => m.result).length}/{roundMatches.length} gespielt
+                      </span>
                     </div>
-                  )
-                })}
+                    {roundMatches.map((m: Match) => (
+                      <MatchCard key={m.id} match={m} onResult={onMatchResult} />
+                    ))}
+                  </div>
+                ))}
               </div>
             </div>
           )

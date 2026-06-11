@@ -29,25 +29,8 @@ function BracketMatch({
   }
 
   const winner = getKnockoutWinner(match)
-  const isBye = !match.teamA || !match.teamB
   const canPlay = !!(match.teamA && match.teamB)
   const played = match.result !== null
-
-  // Bye match: show compact single-row card, team auto-advances
-  if (isBye) {
-    const team = match.teamA || match.teamB
-    return (
-      <div
-        className="rounded-lg border border-emerald-800/40 bg-emerald-950/30 overflow-hidden select-none"
-        style={{ minWidth: 200 }}
-      >
-        <div className="px-3 py-2.5 flex items-center justify-between gap-2">
-          <span className="text-sm font-medium text-emerald-300 truncate">{team?.name ?? 'TBD'}</span>
-          <span className="text-xs text-emerald-600 bg-emerald-900/40 px-2 py-0.5 rounded shrink-0">Freilos</span>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <>
@@ -162,6 +145,11 @@ export default function KnockoutBracket({ rounds, onResult }: Props) {
           {rounds.map((round, ri) => {
             const isFinalRound = ri === rounds.length - 1
             const spacing = Math.pow(2, ri) * 14
+            // In the first round, hide bye slots — top seeds appear directly in round 2
+            const displayMatches = ri === 0
+              ? round.matches.filter(m => m.teamA && m.teamB)
+              : round.matches
+            if (displayMatches.length === 0) return null
             return (
               <div key={round.roundIndex} className="flex flex-col">
                 <p className={`text-center text-xs font-semibold tracking-widest uppercase mb-3 ${
@@ -170,7 +158,7 @@ export default function KnockoutBracket({ rounds, onResult }: Props) {
                   {round.name}
                 </p>
                 <div className="flex flex-col" style={{ gap: `${spacing}px` }}>
-                  {round.matches.map(match => (
+                  {displayMatches.map(match => (
                     <BracketMatch
                       key={match.id}
                       match={match}
