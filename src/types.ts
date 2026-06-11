@@ -1,6 +1,7 @@
 export type Player = {
   id: string
   name: string
+  skill: number  // 1–15, 15 = top
 }
 
 export type Team = {

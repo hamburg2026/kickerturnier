@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { parsePlayers } from '../tournament'
+import * as XLSX from 'xlsx'
 import type { TournamentConfig, Player } from '../types'
 
 type Props = {
@@ -7,24 +7,88 @@ type Props = {
   loadError: string
 }
 
+function uid() { return Math.random().toString(36).slice(2, 10) }
+
+function SkillBar({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: 15 }, (_, i) => (
+        <button
+          key={i}
+          onClick={() => onChange(i + 1)}
+          className={`w-3 h-3 rounded-sm transition-colors ${
+            i < value
+              ? i < 5 ? 'bg-sky-600' : i < 10 ? 'bg-sky-400' : 'bg-emerald-400'
+              : 'bg-gray-700 hover:bg-gray-600'
+          }`}
+          title={`Skill: ${i + 1}`}
+        />
+      ))}
+      <span className="text-xs text-gray-500 font-mono ml-1 w-4">{value}</span>
+    </div>
+  )
+}
+
+function parseExcelOrCsv(data: ArrayBuffer): Player[] {
+  const wb = XLSX.read(data, { type: 'array' })
+  const ws = wb.Sheets[wb.SheetNames[0]]
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' })
+
+  return rows
+    .map(row => {
+      // Case-insensitive column matching
+      const keys = Object.keys(row)
+      const nameKey = keys.find(k => /^name|spieler|namen$/i.test(k))
+      const skillKey = keys.find(k => /^skill|stufe|level|stärke|staerke|rating|wertung$/i.test(k))
+
+      const name = nameKey ? String(row[nameKey]).trim() : ''
+      const skill = skillKey ? Math.min(15, Math.max(1, parseInt(String(row[skillKey])) || 8)) : 8
+
+      return name ? { id: uid(), name, skill } : null
+    })
+    .filter((p): p is Player => p !== null)
+}
+
 export default function SetupScreen({ onStart, loadError }: Props) {
-  const [playerText, setPlayerText] = useState('')
+  const [players, setPlayers] = useState<Player[]>([])
   const [mode, setMode] = useState<'team' | 'individual'>('team')
   const [format, setFormat] = useState<'groups+ko' | 'ko-only'>('groups+ko')
   const [numGroups, setNumGroups] = useState(2)
   const [advanceFromGroup, setAdvanceFromGroup] = useState(2)
   const [error, setError] = useState('')
+  const [parseError, setParseError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const players = parsePlayers(playerText)
   const minPlayers = mode === 'team' ? 4 : 2
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
+    setParseError('')
+
     const reader = new FileReader()
-    reader.onload = ev => setPlayerText(ev.target?.result as string)
-    reader.readAsText(file)
+    reader.onload = ev => {
+      try {
+        const parsed = parseExcelOrCsv(ev.target!.result as ArrayBuffer)
+        if (parsed.length === 0) {
+          setParseError('Keine Spieler gefunden. Bitte Spalten "Name" und "Skillstufe" prüfen.')
+          return
+        }
+        setPlayers(parsed)
+      } catch {
+        setParseError('Datei konnte nicht gelesen werden.')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  }
+
+  function updateSkill(id: string, skill: number) {
+    setPlayers(prev => prev.map(p => p.id === id ? { ...p, skill } : p))
+  }
+
+  function removePlayer(id: string) {
+    setPlayers(prev => prev.filter(p => p.id !== id))
   }
 
   function handleStart() {
@@ -49,9 +113,13 @@ export default function SetupScreen({ onStart, loadError }: Props) {
     onStart(players, { mode, format, numGroups, advanceFromGroup })
   }
 
+  const avgSkill = players.length
+    ? (players.reduce((s, p) => s + p.skill, 0) / players.length).toFixed(1)
+    : null
+
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg space-y-3">
+    <div className="flex-1 flex items-start justify-center p-4 pt-8">
+      <div className="w-full max-w-xl space-y-3">
 
         {(loadError || error) && (
           <div className="bg-red-900/40 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
@@ -59,30 +127,56 @@ export default function SetupScreen({ onStart, loadError }: Props) {
           </div>
         )}
 
-        {/* Spieler */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 space-y-3">
+        {/* Excel Upload */}
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold tracking-widest text-gray-400 uppercase">Spieler</h2>
             {players.length > 0 && (
-              <span className="text-xs text-emerald-400 font-medium">{players.length} erkannt</span>
+              <span className="text-xs text-gray-500">
+                {players.length} Spieler · Ø Skill {avgSkill}
+              </span>
             )}
           </div>
-          <textarea
-            className="w-full h-32 bg-gray-900 border border-gray-600 rounded-lg p-3 text-sm text-gray-100 placeholder-gray-600 resize-none focus:outline-none focus:border-sky-500 font-mono leading-relaxed"
-            placeholder={"Max Mustermann\nAnna Schmidt\nTom Meyer\nLisa Müller"}
-            value={playerText}
-            onChange={e => setPlayerText(e.target.value)}
-          />
+
+          {/* Upload area */}
           <button
-            className="text-xs text-gray-500 hover:text-sky-400 transition-colors flex items-center gap-1"
             onClick={() => fileRef.current?.click()}
+            className="w-full border-2 border-dashed border-gray-600 hover:border-sky-500 rounded-lg p-6 text-center transition-colors group"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-            CSV / TXT Datei laden
+            <div className="text-2xl mb-2">📊</div>
+            <p className="text-sm text-gray-300 group-hover:text-sky-400 transition-colors font-medium">
+              Excel-Datei hochladen
+            </p>
+            <p className="text-xs text-gray-600 mt-1">
+              .xlsx oder .xls · Spalten: <span className="font-mono text-gray-500">Name</span> und <span className="font-mono text-gray-500">Skillstufe</span> (1–15)
+            </p>
           </button>
-          <input ref={fileRef} type="file" accept=".txt,.csv" className="hidden" onChange={handleFile} />
+          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
+
+          {parseError && (
+            <p className="text-xs text-red-400 bg-red-900/30 border border-red-800 rounded p-2">{parseError}</p>
+          )}
+
+          {/* Player list */}
+          {players.length > 0 && (
+            <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+              <div className="flex items-center text-xs text-gray-600 px-2 pb-1 border-b border-gray-700">
+                <span className="flex-1">Name</span>
+                <span className="w-56">Skillstufe</span>
+                <span className="w-4" />
+              </div>
+              {[...players].sort((a, b) => b.skill - a.skill).map(p => (
+                <div key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-700/50 group">
+                  <span className="flex-1 text-sm text-gray-200 truncate">{p.name}</span>
+                  <SkillBar value={p.skill} onChange={v => updateSkill(p.id, v)} />
+                  <button
+                    onClick={() => removePlayer(p.id)}
+                    className="text-gray-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 text-xs ml-1"
+                  >✕</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Modus */}
@@ -94,14 +188,12 @@ export default function SetupScreen({ onStart, loadError }: Props) {
                 key={m}
                 onClick={() => setMode(m)}
                 className={`p-3 rounded-lg border text-left transition-all ${
-                  mode === m
-                    ? 'border-sky-500 bg-sky-500/10 text-white'
-                    : 'border-gray-700 hover:border-gray-500 text-gray-400'
+                  mode === m ? 'border-sky-500 bg-sky-500/10 text-white' : 'border-gray-700 hover:border-gray-500 text-gray-400'
                 }`}
               >
                 <div className="font-medium text-sm">{m === 'team' ? 'Team-Modus' : 'Einzel-Modus'}</div>
                 <div className="text-xs mt-0.5 opacity-70">
-                  {m === 'team' ? '2er-Teams, zufällig gelost' : '1 gegen 1'}
+                  {m === 'team' ? '2er-Teams, Skill-balanciert' : '1 gegen 1, nach Skill gesetzt'}
                 </div>
               </button>
             ))}
@@ -117,9 +209,7 @@ export default function SetupScreen({ onStart, loadError }: Props) {
                 key={f}
                 onClick={() => setFormat(f)}
                 className={`p-3 rounded-lg border text-left transition-all ${
-                  format === f
-                    ? 'border-sky-500 bg-sky-500/10 text-white'
-                    : 'border-gray-700 hover:border-gray-500 text-gray-400'
+                  format === f ? 'border-sky-500 bg-sky-500/10 text-white' : 'border-gray-700 hover:border-gray-500 text-gray-400'
                 }`}
               >
                 <div className="font-medium text-sm">

@@ -7,47 +7,34 @@ function uid(): string {
   return Math.random().toString(36).slice(2, 10)
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
 
-export function parsePlayers(text: string): Player[] {
-  return text
-    .split(/[\n,;]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(name => ({ id: uid(), name }))
+export function teamSkill(team: Team): number {
+  return team.players.reduce((s, p) => s + p.skill, 0)
 }
 
 export function buildTeams(players: Player[], mode: 'team' | 'individual'): Team[] {
-  const shuffled = shuffle(players)
   if (mode === 'individual') {
-    return shuffled.map(p => ({
-      id: uid(),
-      name: p.name,
-      players: [p],
-    }))
+    // Seed strongest to weakest (for fair KO bracket seeding later)
+    return [...players]
+      .sort((a, b) => b.skill - a.skill)
+      .map(p => ({ id: uid(), name: p.name, players: [p] }))
   }
-  // Team mode: pair up randomly
+
+  // Team mode: balanced high-low pairing
+  // Sort descending by skill, pair strongest with weakest
+  // → each pair has similar total skill
+  const sorted = [...players].sort((a, b) => b.skill - a.skill)
   const teams: Team[] = []
-  for (let i = 0; i < shuffled.length - 1; i += 2) {
-    const a = shuffled[i]
-    const b = shuffled[i + 1]
-    teams.push({
-      id: uid(),
-      name: `${a.name} & ${b.name}`,
-      players: [a, b],
-    })
+  const half = Math.floor(sorted.length / 2)
+
+  for (let i = 0; i < half; i++) {
+    const a = sorted[i]
+    const b = sorted[sorted.length - 1 - i]
+    teams.push({ id: uid(), name: `${a.name} & ${b.name}`, players: [a, b] })
   }
-  // Odd player out gets added to last team or gets their own team
-  if (shuffled.length % 2 !== 0) {
-    const last = shuffled[shuffled.length - 1]
-    teams.push({ id: uid(), name: last.name, players: [last] })
+  if (sorted.length % 2 !== 0) {
+    const mid = sorted[half]
+    teams.push({ id: uid(), name: mid.name, players: [mid] })
   }
   return teams
 }
@@ -77,7 +64,9 @@ function roundRobinMatches(teams: Team[], groupId: string): Match[] {
 }
 
 export function buildGroups(teams: Team[], numGroups: number): Group[] {
-  const shuffled = shuffle(teams)
+  // Snake-draft by skill: ensures each group has similar total strength
+  // e.g. 8 teams, 2 groups → A: 1,4,5,8  B: 2,3,6,7  (equal sums)
+  const sorted = [...teams].sort((a, b) => teamSkill(b) - teamSkill(a))
   const groups: Group[] = Array.from({ length: numGroups }, (_, i) => ({
     id: uid(),
     name: `Gruppe ${String.fromCharCode(65 + i)}`,
@@ -85,8 +74,11 @@ export function buildGroups(teams: Team[], numGroups: number): Group[] {
     matches: [],
   }))
 
-  shuffled.forEach((team, idx) => {
-    groups[idx % numGroups].teams.push(team)
+  sorted.forEach((team, idx) => {
+    const round = Math.floor(idx / numGroups)
+    const pos = idx % numGroups
+    const groupIdx = round % 2 === 0 ? pos : numGroups - 1 - pos
+    groups[groupIdx].teams.push(team)
   })
 
   groups.forEach(g => {
@@ -221,8 +213,9 @@ export function createTournament(
   const teams = buildTeams(players, config.mode)
 
   if (config.format === 'ko-only') {
-    const shuffledTeams = shuffle(teams)
-    const knockoutRounds = buildKnockoutRounds(shuffledTeams)
+    // Seed by skill: 1 vs last, 2 vs second-last, etc.
+    const seeded = [...teams].sort((a, b) => teamSkill(b) - teamSkill(a))
+    const knockoutRounds = buildKnockoutRounds(seeded)
     return {
       config,
       players,
